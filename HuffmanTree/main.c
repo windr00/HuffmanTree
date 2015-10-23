@@ -1,275 +1,254 @@
-﻿//
-//  Anothermain.c
-//  HuffmanTree
-//
-//  Created by 冉惟之 on 15/10/18.
-//  Copyright © 2015年 WindR. All rights reserved.
-//
-
-#include <stdio.h>
-#include <string.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
+#include <stdint.h>
+#define WEIGHT_ARRAY_MAX_SIZE 256
 
-
-#define WEIGHTED_ARRAY_SIZE 256
-
-typedef struct SLWeightTable {
-	char * DynamicCharacterArray;
+typedef struct SLHuffmanList {
+	unsigned char Character;
 	unsigned NodeWeight;
-	int CharacterCount;
-}SLWeigtTable;
+	struct SLHuffmanList * Next;
+	struct SLHuffmanList * LeftNode;
+	struct SLHuffmanList * RightNode;
+}SLHuffmanList;
 
-typedef struct SLHuffmanTree{
-	SLWeigtTable CharacterAttribute;
-	struct SLHuffmanTree * ParreleRoot;
-	struct SLHuffmanTree * LeftNode;
-	struct SLHuffmanTree * RightNode;
-}SLHuffmanTree;
-
-SLWeigtTable * getWeightedArray() {
-	static SLWeigtTable WeightedArray[WEIGHTED_ARRAY_SIZE];
-	system("cls");
-	for (int i = 0; i < WEIGHTED_ARRAY_SIZE; i++) {
-		printf("C:%s\tCC:%d\tNW:%u\n"); 
-	}
-	return WeightedArray;
+SLHuffmanList * getHuffmanListHead() {
+	static SLHuffmanList Head;
+	return &Head;
 }
 
+typedef struct SLEncodeMap {
+	unsigned char * BitBuffer;
+}SLEncodeMap;
 
+SLEncodeMap * getEncodeMap() {
+	static SLEncodeMap EncodeMap[WEIGHT_ARRAY_MAX_SIZE];
+	return &EncodeMap;
+}
 
-void initWeightedArray() {
-	SLWeigtTable * TempArray = getWeightedArray();
-	for (int i = 0; i < WEIGHTED_ARRAY_SIZE; i++) {
-		TempArray[i].DynamicCharacterArray = (char *)malloc(2);
-		memset(TempArray[i].DynamicCharacterArray, 0, 2);
-		TempArray[i].DynamicCharacterArray[0] = (char)i;
-		TempArray[i].NodeWeight = 0;
-		TempArray[i].CharacterCount = 1;
+void initEncodeMap() {
+	SLEncodeMap * TempMap = getEncodeMap();
+	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
+		TempMap[i].BitBuffer = NULL;
 	}
 }
 
-int appendNewCharacter(const char NewCharacter) {
-	SLWeigtTable * TempArray = getWeightedArray();
-	if ((int)NewCharacter > WEIGHTED_ARRAY_SIZE) {
-		return -1;
-	}
-	TempArray[NewCharacter].NodeWeight++;
-	return 0;
+unsigned * getWeightArray() {
+	static unsigned WeightArray[WEIGHT_ARRAY_MAX_SIZE];
+	return WeightArray;
 }
 
-unsigned getCharacterWeightFromArray(const char Character) {
-	SLWeigtTable * TempArray = getWeightedArray();
-	return TempArray[Character].NodeWeight;
-}
-
-SLWeigtTable getOneMinimumWeightedChar() {
-	SLWeigtTable * TempArray = getWeightedArray();
-	unsigned MinimumWeight = UINT_MAX;
-	int MinimumIndex = 0;
-	SLWeigtTable MinimumWeightedChar;
-	MinimumWeightedChar.DynamicCharacterArray = NULL;
-	int i = 0;
-	for (i = 0; i < WEIGHTED_ARRAY_SIZE; i++) {
-		if (TempArray[i].NodeWeight < MinimumWeight && TempArray[i].NodeWeight != UINT_MAX &&
-			TempArray[i].DynamicCharacterArray != NULL && TempArray[i].NodeWeight > 0) {
-
-			MinimumWeight = TempArray[i].NodeWeight;
-			MinimumWeightedChar = TempArray[i];
-			MinimumWeightedChar.DynamicCharacterArray = (char *)malloc(strlen(TempArray[i].DynamicCharacterArray) + 1);
-			memset(MinimumWeightedChar.DynamicCharacterArray, 0, strlen(TempArray[i].DynamicCharacterArray) + 1);
-			memcpy(MinimumWeightedChar.DynamicCharacterArray, TempArray[i].DynamicCharacterArray, strlen(TempArray[i].DynamicCharacterArray));
-			MinimumIndex = i;
-		}
-	}
-	TempArray[MinimumIndex].NodeWeight = UINT_MAX;
-	return MinimumWeightedChar;
-}
-
-char * strMerge(char * CharOne, char * CharTwo) {
-	char * RetStr = (char *)malloc(strlen(CharOne) + strlen(CharTwo) + 2);
-
-	memset(RetStr, 0, strlen(CharOne) + strlen(CharTwo) + 2);
-
-	strcpy(RetStr, CharOne);
-	strcat(RetStr, ",");
-	strcat(RetStr, CharTwo);
-
-	return RetStr;
-}
-
-void mergeCharacterWeight(SLWeigtTable CharOne, SLWeigtTable CharTwo) {
-
-	SLWeigtTable * TempArray = getWeightedArray();
-
-	for (int i = 0; i < WEIGHTED_ARRAY_SIZE; i++) {
-		if (TempArray[i].DynamicCharacterArray != NULL && strcmp(TempArray[i].DynamicCharacterArray, CharOne.DynamicCharacterArray) == 0) {
-			free(TempArray[i].DynamicCharacterArray);
-			TempArray[i].DynamicCharacterArray = (char *)malloc(strlen(CharOne.DynamicCharacterArray) + strlen(CharTwo.DynamicCharacterArray) + 2);
-
-			TempArray[i].DynamicCharacterArray = strMerge(CharOne.DynamicCharacterArray, CharTwo.DynamicCharacterArray);
-
-
-			TempArray[i].NodeWeight = CharOne.NodeWeight + CharTwo.NodeWeight;
-			TempArray[i].CharacterCount = CharOne.CharacterCount + CharTwo.CharacterCount;
-		}
-
-		if (TempArray[i].DynamicCharacterArray != NULL && strcmp(TempArray[i].DynamicCharacterArray, CharTwo.DynamicCharacterArray) == 0) {
-			free(TempArray[i].DynamicCharacterArray);
-			TempArray[i].DynamicCharacterArray = NULL;
-		}
-
-	}
-}
-
-SLHuffmanTree * initTreeNode() {
-	SLHuffmanTree * TreeNode;
-
-	TreeNode = (SLHuffmanTree *)malloc(sizeof(SLHuffmanTree));
-
-	TreeNode->CharacterAttribute.DynamicCharacterArray = NULL;
-
-	TreeNode->ParreleRoot = NULL;
-
-	TreeNode->CharacterAttribute.NodeWeight = 0;
-	TreeNode->CharacterAttribute.CharacterCount = 0;
-
-	TreeNode->LeftNode = NULL;
-	TreeNode->RightNode = NULL;
-
-	return TreeNode;
-}
-
-
-SLHuffmanTree * buildHuffmanTree() {
-	SLHuffmanTree * TreeRoot = initTreeNode();
-	SLWeigtTable CharOne;
-	SLWeigtTable CharTwo;
-	CharOne = getOneMinimumWeightedChar();
-	CharTwo = getOneMinimumWeightedChar();
-	while (CharOne.DynamicCharacterArray != NULL && CharTwo.DynamicCharacterArray != NULL) {
-
-		SLHuffmanTree * NewTree;
-		NewTree = initTreeNode();
-		NewTree->LeftNode = initTreeNode();
-		NewTree->RightNode = initTreeNode();
-		NewTree->LeftNode->CharacterAttribute = CharOne;
-		NewTree->RightNode->CharacterAttribute = CharTwo;
-
-		NewTree->CharacterAttribute.DynamicCharacterArray = strMerge(CharOne.DynamicCharacterArray, CharTwo.DynamicCharacterArray);
-
-		NewTree->CharacterAttribute.NodeWeight = CharOne.NodeWeight + CharTwo.NodeWeight;
-
-		NewTree->CharacterAttribute.CharacterCount = CharTwo.CharacterCount + CharOne.CharacterCount;
-
-		mergeCharacterWeight(CharOne, CharTwo);
-
-		if (TreeRoot->CharacterAttribute.DynamicCharacterArray != NULL && (strcmp(TreeRoot->CharacterAttribute.DynamicCharacterArray, CharOne.DynamicCharacterArray) == 0)) {
-			NewTree->LeftNode = TreeRoot;
-			if (TreeRoot->ParreleRoot != NULL) {
-				NewTree->RightNode = TreeRoot->ParreleRoot;
-				TreeRoot->ParreleRoot = NULL;
+void initHuffmanList() {
+	SLHuffmanList * head = getHuffmanListHead();
+	SLHuffmanList * NewNode;
+	unsigned * WeightArray = getWeightArray();
+	head->Next = NULL;
+	head->LeftNode = NULL;
+	head->RightNode = NULL;
+	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
+		if (WeightArray[i] != 0) {
+			for (head = head; head->Next != NULL; head = head->Next) {
+				if (WeightArray[i] <= head->Next->NodeWeight) {
+					break;
+				}
 			}
-			TreeRoot = NewTree;
-			CharOne = getOneMinimumWeightedChar();
-			CharTwo = getOneMinimumWeightedChar();
-			continue;
-		}
-
-		else if (TreeRoot->CharacterAttribute.DynamicCharacterArray != NULL && (strcmp(TreeRoot->CharacterAttribute.DynamicCharacterArray, CharTwo.DynamicCharacterArray) == 0)) {
-			NewTree->RightNode = TreeRoot;
-			TreeRoot = NewTree;
-			CharOne = getOneMinimumWeightedChar();
-			CharTwo = getOneMinimumWeightedChar();
-			continue;
-		}
-
-		else if ((TreeRoot->LeftNode == NULL && TreeRoot->RightNode == NULL)) {
-
-			TreeRoot = NewTree;
-			CharOne = getOneMinimumWeightedChar();
-			CharTwo = getOneMinimumWeightedChar();
-			continue;
-		}
-		else {
-			TreeRoot->ParreleRoot = NewTree;
-			CharOne = getOneMinimumWeightedChar();
-			CharTwo = getOneMinimumWeightedChar();
+			NewNode = (SLHuffmanList *)malloc(sizeof(SLHuffmanList));
+			NewNode->Character = i;
+			NewNode->NodeWeight = WeightArray[i];
+			NewNode->LeftNode = NULL;
+			NewNode->RightNode = NULL;
+			NewNode->Next = head->Next;
+			head->Next = NewNode;
 		}
 	}
-	return TreeRoot;
+
 }
 
-char * encodeHuffman(SLHuffmanTree * TreeRoot, const char TargetCharacter, int NodeFlag) {
-	static char * BitBuffer = "";
-	static unsigned BufferLength = 1;
-	char * TempStore = NULL;
-	char * retValue = NULL;
-	if (TreeRoot != NULL) {
-		if ((retValue = encodeHuffman(TreeRoot->RightNode, TargetCharacter, 1) != NULL)) {
-			return retValue;
-		}
-		if ((retValue = encodeHuffman(TreeRoot->LeftNode, TargetCharacter, 0)) != NULL) {
-			return retValue;
-		}
-		if (0 == NodeFlag || 1 == NodeFlag) {
-			TempStore = BitBuffer;
-			BitBuffer = (char *)malloc(BufferLength + 1);
-			memset(BitBuffer, 0, BufferLength + 1);
-			memcpy(BitBuffer, TempStore, BufferLength);
-			BitBuffer[BufferLength - 1] = (char)(NodeFlag + 48);
-			BufferLength++;
-		}
-		if (TreeRoot->LeftNode == NULL && TreeRoot->RightNode == NULL && TreeRoot->CharacterAttribute.DynamicCharacterArray[0] == TargetCharacter) {
-			retValue = (char *)malloc(BufferLength);
-			memset(retValue, 0, BufferLength);
-			memcpy(retValue, BitBuffer, strlen(BitBuffer));
-			BitBuffer = "";
-			BufferLength = 1;
-			return retValue;
+void buildHuffmanTree() {
+	SLHuffmanList * head = getHuffmanListHead();
+	SLHuffmanList * NewNode;
+	SLHuffmanList * tmp;
+	while (head->Next->Next != NULL) {
+		tmp = head->Next;
+		if (tmp->Next != NULL) {
+			head->Next = tmp->Next->Next;
+			NewNode = (SLHuffmanList *)malloc(sizeof(SLHuffmanList));
+			NewNode->Character = '\0';
+			NewNode->NodeWeight = tmp->NodeWeight + tmp->Next->NodeWeight;
+			NewNode->RightNode = tmp->Next;
+			NewNode->RightNode->Next = NULL;
+			NewNode->LeftNode = tmp;
+			NewNode->LeftNode->Next = NULL;
+			for (tmp = head; tmp->Next != NULL; tmp = tmp->Next) {
+				if (tmp->Next->NodeWeight >= NewNode->NodeWeight) {
+					break;
+				}
+			}
+			if (tmp->Next == NULL) {
+				tmp->Next = NewNode;
+				NewNode->Next = NULL;
+			}
+			else {
+
+				NewNode->Next = tmp->Next->Next;
+				tmp->Next->Next = NewNode;
+			}
 		}
 	}
-	BitBuffer = "";
-	BufferLength = 1;
-	return NULL;
 }
 
-void readFromFile(const char * FilePath) {
-	FILE * FilePointer = fopen(FilePath, "r+b");
-	char TempChar;
+void encodeHuffmanTree(SLEncodeMap * EncodeMap, SLHuffmanList * TreeRoot, unsigned CurrentBufferLength) {
+	static unsigned char tmpString[WEIGHT_ARRAY_MAX_SIZE];
+	if (!(TreeRoot->LeftNode && TreeRoot->RightNode))
+	{
+		unsigned char * tmpOperation;
+		tmpOperation = (unsigned char *)malloc(CurrentBufferLength + 1);
+		memcpy(tmpOperation, tmpString, CurrentBufferLength);
+		tmpOperation[CurrentBufferLength] = '\0';
+		EncodeMap[(int)TreeRoot->Character].BitBuffer = tmpOperation;
+		return;
+	}
 
-	while ((TempChar = fgetc(FilePointer)) != EOF){
-		appendNewCharacter(TempChar);
+	tmpString[CurrentBufferLength] = '0';
+	tmpString[CurrentBufferLength + 1] = 0;
+	encodeHuffmanTree(EncodeMap, TreeRoot->LeftNode, CurrentBufferLength + 1);
+
+	tmpString[CurrentBufferLength] = '1';
+	tmpString[CurrentBufferLength + 1] = 0;
+	encodeHuffmanTree(EncodeMap, TreeRoot->RightNode, CurrentBufferLength + 1);
+
+}
+
+
+
+void decodeHuffmanTree(FILE * RFP, FILE * WFP, SLHuffmanList * TreeRoot) {
+	static char OneBit = '0';
+}
+
+
+static char * OriginalFilePath;
+static char * CompressedFilePath;
+
+void setOriginalFilePath(const char * Original) {
+	OriginalFilePath = Original;
+}
+
+void setCompressedFilePath(const char * Compressed) {
+	CompressedFilePath = Compressed;
+}
+
+const char * getOriginalFilePath() {
+	return OriginalFilePath;
+}
+
+const char * getCompressedFilePath() {
+	return CompressedFilePath;
+}
+
+
+void readFromOriginalFile() {
+	FILE * OriginalFile = fopen(getOriginalFilePath(), "r+b");
+	unsigned * WeightedArray = getWeightArray();
+	unsigned char Character;
+	while (fread(&Character, 1, 1, OriginalFile) != 0) {
+		WeightedArray[Character]++;
+	}
+	fclose(OriginalFile);
+}
+
+void readFromCompressedFile() {
+	FILE * CompressedFile = fopen(getCompressedFilePath(), "r+b");
+	unsigned * WeightedArray = getWeightArray();
+	int16_t Count = 0;
+	char Character = 0;
+	unsigned NodeWeight = 0;
+	fread(&Count, sizeof(int16_t), 1, CompressedFile);
+	for (int i = 0; i < Count; i++) {
+		fscanf(CompressedFile, "%c", &Character);
+		fscanf(CompressedFile, "%u", &NodeWeight);
+		WeightedArray[Character] = NodeWeight;
 	}
 }
+
 
 void printResult() {
-	int CharacterCount = 0;
-	SLWeigtTable * WeightedTable = getWeightedArray();
-	SLHuffmanTree * TreeRoot = buildHuffmanTree();
-	char * AllCharacters = NULL;
-	for (int i = 0; i < WEIGHTED_ARRAY_SIZE; i++) {
-		if (WeightedTable[i].DynamicCharacterArray != NULL && strcmp(WeightedTable[i].DynamicCharacterArray, "\0") && WeightedTable[i].NodeWeight != 0) {
-			CharacterCount = WeightedTable[i].CharacterCount;
-			AllCharacters = WeightedTable[i].DynamicCharacterArray;
-			break;
+	initEncodeMap();
+	SLEncodeMap * EncodeMap = getEncodeMap();
+	encodeHuffmanTree(EncodeMap, getHuffmanListHead()->Next, 0);
+	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
+		if (EncodeMap[i].BitBuffer != NULL) {
+			printf("%c(%d)\t%s\n", (unsigned char)i, i, EncodeMap[i].BitBuffer);
 		}
 	}
-
-	printf("%s", encodeHuffman(TreeRoot, 'l', 2));
-	printf("%s", encodeHuffman(TreeRoot, 'a', 2));
-
-	/*for (int i = 0; i < 2 * CharacterCount; i += 2) {
-	char * retValue = encodeHuffman(TreeRoot, AllCharacters[i], 2);
-	printf("%c\t%s\n", AllCharacters[i], retValue);
-	}*/
 }
 
 
-int main(int argc, const char ** argv) {
-	initWeightedArray();
-	readFromFile("F:\\test.txt");
+void writeToFile() {
+	FILE * Writable = fopen(getCompressedFilePath(), "w+b");
+	FILE * Readable = fopen(getOriginalFilePath(), "r+b");
+	unsigned * WeightTable = getWeightArray();
+	SLEncodeMap * EncodeMap = getEncodeMap();
+	int16_t Count = 0;
+	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
+		if (WeightTable[i] != 0) {
+			Count++;
+		}
+	}
+	fprintf(Writable, "%d ", Count);
+	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
+		if (WeightTable[i] != 0) {
+			fprintf(Writable, "%c %u ", i, WeightTable[i]);
+		}
+	}
+	unsigned char BitCode = 0;
+	unsigned char CharCode = 0;
+	unsigned char * BitCodeBuffer = NULL;
+	int BitIndex = 0;
+	int CurrentIndex = 0;
+
+	while (fread(&CharCode, 1, 1, Readable) != 0) {
+
+		BitCodeBuffer = EncodeMap[(unsigned)CharCode].BitBuffer;
+		CurrentIndex = 0;
+		while (BitIndex != 7)
+		{
+			if (BitCodeBuffer[CurrentIndex] != '\0'){
+				if (BitCodeBuffer[CurrentIndex] == '0') {
+					BitCode <<= 1;
+					BitIndex++;
+					CurrentIndex++;
+				}
+				else {
+					BitCode <<= 1;
+					BitCode |= 1;
+					BitIndex++;
+					CurrentIndex++;
+				}
+			}
+			else {
+				break;
+			}
+		}
+		if (BitIndex == 7) {
+			fwrite(&BitCode, 1, 1, Writable);
+			BitIndex = 0;
+		}
+	}
+	if (BitCode != 7) {
+		fwrite(&BitCode, 1, 1, Writable);
+	}
+	fclose(Writable);
+	fclose(Readable);
+}
+
+
+int main(int argc, char ** argv) {
+	setOriginalFilePath("D:\\test.txt");
+	setCompressedFilePath("D:\\test.hz");
+	readFromOriginalFile();
+	initHuffmanList();
+	buildHuffmanTree();
 	printResult();
+	writeToFile();
 	system("pause");
 	return 0;
 }
