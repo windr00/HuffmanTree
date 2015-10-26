@@ -120,8 +120,25 @@ void encodeHuffmanTree(SLEncodeMap * EncodeMap, SLHuffmanList * TreeRoot, unsign
 
 
 
-void decodeHuffmanTree(FILE * RFP, FILE * WFP, SLHuffmanList * TreeRoot) {
+void decodeHuffmanTree(FILE * RFP, FILE * WFP, SLHuffmanList * TreeRoot, int CurrentBit) {
 	static char OneBit = '0';
+	static char BitBuffer;
+	if (CurrentBit == 0) {
+		fread(&BitBuffer, 1, 1, RFP);
+		CurrentBit = 7;
+	}
+	if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
+		fwrite(&TreeRoot->Character, 1, 1, WFP);
+		TreeRoot = getHuffmanListHead() -> Next;
+	}
+	OneBit = (BitBuffer >> CurrentBit & 0x01) + 48;
+	if (OneBit == '0') {
+		decodeHuffmanTree(RFP, WFP, TreeRoot->LeftNode, CurrentBit - 1);
+	}
+	else
+	{
+		decodeHuffmanTree(RFP, WFP, TreeRoot->RightNode, CurrentBit - 1);
+	}
 }
 
 
@@ -162,22 +179,40 @@ void readFromCompressedFile() {
 	char Character = 0;
 	unsigned NodeWeight = 0;
 	fread(&Count, sizeof(int16_t), 1, CompressedFile);
+	fread(&Character, 1, 1, CompressedFile);
 	for (int i = 0; i < Count; i++) {
-		fscanf(CompressedFile, "%c", &Character);
-		fscanf(CompressedFile, "%u", &NodeWeight);
+		fread(&Character, 1, 1, CompressedFile);
+		fread(&NodeWeight, sizeof(unsigned), 1, CompressedFile);
 		WeightedArray[Character] = NodeWeight;
 	}
+	fclose(CompressedFile);
 }
 
 
-void printResult() {
-	initEncodeMap();
-	SLEncodeMap * EncodeMap = getEncodeMap();
-	encodeHuffmanTree(EncodeMap, getHuffmanListHead()->Next, 0);
-	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
-		if (EncodeMap[i].BitBuffer != NULL) {
-			printf("%c(%d)\t%s\n", (unsigned char)i, i, EncodeMap[i].BitBuffer);
+void finalExecution(int Operation) {
+	if (Operation == 0) {
+		initEncodeMap();
+		SLEncodeMap * EncodeMap = getEncodeMap();
+		encodeHuffmanTree(EncodeMap, getHuffmanListHead()->Next, 0);
+		for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
+			if (EncodeMap[i].BitBuffer != NULL) {
+				printf("%c(%d)\t%s\n", (unsigned char)i, i, EncodeMap[i].BitBuffer);
+			}
 		}
+	}
+	else {
+		FILE * CompressedFile = fopen(getCompressedFilePath(), "r+b");
+		FILE * OriginalFile = fopen(getOriginalFilePath(), "w+b");
+		int SkipCount = 0;
+		char Character = 0;
+		unsigned NodeWeight = 0;
+		fread(&SkipCount, sizeof(int16_t), 1, CompressedFile);
+		fread(&Character, 1, 1, CompressedFile);
+		for (int i = 0; i < SkipCount; i++) {
+			fread(&Character, 1, 1, CompressedFile);
+			fread(&NodeWeight, sizeof(unsigned), 1, CompressedFile);
+		}
+		decodeHuffmanTree(CompressedFile, OriginalFile, getHuffmanListHead() ->Next, 0);
 	}
 }
 
@@ -193,10 +228,11 @@ void writeToFile() {
 			Count++;
 		}
 	}
-	fprintf(Writable, "%d ", Count);
+	fwrite(&Count, sizeof(int16_t), 1, Writable);
 	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
 		if (WeightTable[i] != 0) {
-			fprintf(Writable, "%c %u ", i, WeightTable[i]);
+			fwrite(&i, 1, 1, Writable);
+			fwrite(WeightTable + i, sizeof(unsigned), 1, Writable);
 		}
 	}
 	unsigned char BitCode = 0;
@@ -240,15 +276,27 @@ void writeToFile() {
 	fclose(Readable);
 }
 
-
-int main(int argc, char ** argv) {
-	setOriginalFilePath("D:\\test.txt");
-	setCompressedFilePath("D:\\test.hz");
+void encodeFile() {
+	setOriginalFilePath("F:\\test.txt");
+	setCompressedFilePath("F:\\test.hz");
 	readFromOriginalFile();
 	initHuffmanList();
 	buildHuffmanTree();
-	printResult();
+	finalExecution(0);
 	writeToFile();
+}
+
+void decodeFile() {
+	setCompressedFilePath("F:\\test.hz");
+	setOriginalFilePath("F:\\tmp.txt");
+	readFromCompressedFile();
+	initHuffmanList();
+	buildHuffmanTree();
+	finalExecution(1);
+}
+
+int main(int argc, char ** argv) {
+	decodeFile();
 	system("pause");
 	return 0;
 }
