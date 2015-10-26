@@ -120,26 +120,29 @@ void encodeHuffmanTree(SLEncodeMap * EncodeMap, SLHuffmanList * TreeRoot, unsign
 
 
 
-void decodeHuffmanTree(FILE * RFP, FILE * WFP, SLHuffmanList * TreeRoot, int CurrentBit) {
-	static char OneBit = '0';
-	static char BitBuffer;
-	if (CurrentBit == 0) {
-		fread(&BitBuffer, 1, 1, RFP);
-		CurrentBit = 7;
-	}
-	if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
-		fwrite(&TreeRoot->Character, 1, 1, WFP);
-		TreeRoot = getHuffmanListHead() -> Next;
-	}
-	OneBit = (BitBuffer >> CurrentBit & 0x01) + 48;
-	if (OneBit == '0') {
-		decodeHuffmanTree(RFP, WFP, TreeRoot->LeftNode, CurrentBit - 1);
-	}
-	else
-	{
-		decodeHuffmanTree(RFP, WFP, TreeRoot->RightNode, CurrentBit - 1);
-	}
-}
+//void decodeHuffmanTree(FILE * RFP, FILE * WFP, SLHuffmanList * TreeRoot, int CurrentBit) {
+//	static char OneBit = '0';
+//	static char BitBuffer;
+//	static int BitIndex = 7;
+//	if (CurrentBit == 0) {
+//		fread(&BitBuffer, 1, 1, RFP);
+//		CurrentBit = 7;
+//	}
+//	if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
+//		fwrite(&TreeRoot->Character, 1, 1, WFP);
+//		TreeRoot = getHuffmanListHead() -> Next;
+//	}
+//	OneBit = (BitBuffer >> CurrentBit & 0x01) + 48;
+//	BitIndex--;
+//	if (OneBit == '0') {
+//		decodeHuffmanTree(RFP, WFP, TreeRoot->LeftNode, CurrentBit - 1);
+//	}
+//	else
+//	{
+//		decodeHuffmanTree(RFP, WFP, TreeRoot->RightNode, CurrentBit - 1);
+//	}
+//}
+//
 
 
 static char * OriginalFilePath;
@@ -161,6 +164,44 @@ const char * getCompressedFilePath() {
 	return CompressedFilePath;
 }
 
+void decodeHuffmanTreeAndWriteToFile() {
+	FILE * Readable = fopen(getCompressedFilePath(), "r+b");
+	FILE * Writable = fopen(getOriginalFilePath(), "w+b");
+	SLHuffmanList * TreeRoot = getHuffmanListHead()->Next;
+	char BitBuffer = 0;
+	char CurrentBit = 0;
+	int BitIndex = 7;
+	unsigned NodeWeight = 0;
+	int16_t Count = 0;
+	fread(&Count, sizeof(int16_t), 1, Readable);
+	for (int i = 0; i < Count; i++) {
+		fread(&BitBuffer, 1, 1, Readable);
+		fread(&NodeWeight, sizeof(unsigned), 1, Readable);
+	}
+	fread(&BitBuffer, 1, 1, Readable);
+	while (TreeRoot != NULL) {
+		if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
+			fwrite(&TreeRoot->Character, 1, 1, Writable);
+			TreeRoot = getHuffmanListHead()->Next;
+		}
+		CurrentBit = BitBuffer >> BitIndex & 1;
+		BitIndex--;
+		if (BitIndex == -1) {
+			if (fread(&BitBuffer, 1, 1, Readable) == 0) {
+				break;
+			}
+			BitIndex = 7;
+		}
+		if (CurrentBit == 1) {
+			TreeRoot = TreeRoot->RightNode;
+		}
+		else {
+			TreeRoot = TreeRoot->LeftNode;
+		}
+	}
+	fclose(Readable);
+	fclose(Writable);
+}
 
 void readFromOriginalFile() {
 	FILE * OriginalFile = fopen(getOriginalFilePath(), "r+b");
@@ -176,14 +217,14 @@ void readFromCompressedFile() {
 	FILE * CompressedFile = fopen(getCompressedFilePath(), "r+b");
 	unsigned * WeightedArray = getWeightArray();
 	int16_t Count = 0;
-	char Character = 0;
+	unsigned char Character = 0;
 	unsigned NodeWeight = 0;
 	fread(&Count, sizeof(int16_t), 1, CompressedFile);
-	fread(&Character, 1, 1, CompressedFile);
 	for (int i = 0; i < Count; i++) {
 		fread(&Character, 1, 1, CompressedFile);
 		fread(&NodeWeight, sizeof(unsigned), 1, CompressedFile);
 		WeightedArray[Character] = NodeWeight;
+		printf("%c(%d)\t%u\n", Character, Character, NodeWeight);
 	}
 	fclose(CompressedFile);
 }
@@ -207,12 +248,12 @@ void finalExecution(int Operation) {
 		char Character = 0;
 		unsigned NodeWeight = 0;
 		fread(&SkipCount, sizeof(int16_t), 1, CompressedFile);
-		fread(&Character, 1, 1, CompressedFile);
 		for (int i = 0; i < SkipCount; i++) {
 			fread(&Character, 1, 1, CompressedFile);
 			fread(&NodeWeight, sizeof(unsigned), 1, CompressedFile);
 		}
-		decodeHuffmanTree(CompressedFile, OriginalFile, getHuffmanListHead() ->Next, 0);
+
+		decodeHuffmanTreeAndWriteToFile();
 	}
 }
 
@@ -239,37 +280,36 @@ void writeToFile() {
 	unsigned char CharCode = 0;
 	unsigned char * BitCodeBuffer = NULL;
 	int BitIndex = 0;
-	int CurrentIndex = 0;
 
 	while (fread(&CharCode, 1, 1, Readable) != 0) {
-
 		BitCodeBuffer = EncodeMap[(unsigned)CharCode].BitBuffer;
-		CurrentIndex = 0;
-		while (BitIndex != 7)
+		BitIndex = 0;
+		while (BitIndex != 8)
 		{
-			if (BitCodeBuffer[CurrentIndex] != '\0'){
-				if (BitCodeBuffer[CurrentIndex] == '0') {
+			
+			if (BitCodeBuffer[BitIndex] != '\0'){
+				if (BitCodeBuffer[BitIndex] == '0') {
 					BitCode <<= 1;
 					BitIndex++;
-					CurrentIndex++;
 				}
 				else {
 					BitCode <<= 1;
 					BitCode |= 1;
 					BitIndex++;
-					CurrentIndex++;
+				}
+				if (BitIndex == 8) {
+					fwrite(&BitCode, 1, 1, Writable);
+					BitIndex = 0;
+					BitCode = 0;
 				}
 			}
 			else {
 				break;
 			}
 		}
-		if (BitIndex == 7) {
-			fwrite(&BitCode, 1, 1, Writable);
-			BitIndex = 0;
-		}
 	}
-	if (BitCode != 7) {
+
+	if (BitIndex != 8) {
 		fwrite(&BitCode, 1, 1, Writable);
 	}
 	fclose(Writable);
@@ -296,7 +336,7 @@ void decodeFile() {
 }
 
 int main(int argc, char ** argv) {
-	decodeFile();
+	encodeFile();
 	system("pause");
 	return 0;
 }
