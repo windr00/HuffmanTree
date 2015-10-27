@@ -168,18 +168,20 @@ void decodeHuffmanTreeAndWriteToFile() {
 	FILE * Readable = fopen(getCompressedFilePath(), "r+b");
 	FILE * Writable = fopen(getOriginalFilePath(), "w+b");
 	SLHuffmanList * TreeRoot = getHuffmanListHead()->Next;
-	char BitBuffer = 0;
-	char CurrentBit = 0;
+	unsigned char BitBuffer = 0;
+	unsigned char CurrentBit = 0;
 	int BitIndex = 7;
 	unsigned NodeWeight = 0;
 	int16_t Count = 0;
+	int32_t FileLength;
+	fread(&FileLength , sizeof(int32_t), 1, Readable);
 	fread(&Count, sizeof(int16_t), 1, Readable);
 	for (int i = 0; i < Count; i++) {
 		fread(&BitBuffer, 1, 1, Readable);
 		fread(&NodeWeight, sizeof(unsigned), 1, Readable);
 	}
 	fread(&BitBuffer, 1, 1, Readable);
-	while (TreeRoot != NULL) {
+	while (FileLength != ftell(Writable)) {
 		if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
 			fwrite(&TreeRoot->Character, 1, 1, Writable);
 			TreeRoot = getHuffmanListHead()->Next;
@@ -216,9 +218,11 @@ void readFromOriginalFile() {
 void readFromCompressedFile() {
 	FILE * CompressedFile = fopen(getCompressedFilePath(), "r+b");
 	unsigned * WeightedArray = getWeightArray();
+	int32_t FileLength = 0;
 	int16_t Count = 0;
 	unsigned char Character = 0;
 	unsigned NodeWeight = 0;
+	fread(&FileLength, sizeof(int32_t), 1, CompressedFile);
 	fread(&Count, sizeof(int16_t), 1, CompressedFile);
 	for (int i = 0; i < Count; i++) {
 		fread(&Character, 1, 1, CompressedFile);
@@ -247,6 +251,7 @@ void finalExecution(int Operation) {
 		int SkipCount = 0;
 		char Character = 0;
 		unsigned NodeWeight = 0;
+		fread(&SkipCount, sizeof(int32_t), 1, CompressedFile);
 		fread(&SkipCount, sizeof(int16_t), 1, CompressedFile);
 		for (int i = 0; i < SkipCount; i++) {
 			fread(&Character, 1, 1, CompressedFile);
@@ -254,6 +259,8 @@ void finalExecution(int Operation) {
 		}
 
 		decodeHuffmanTreeAndWriteToFile();
+		fclose(CompressedFile);
+		fclose(OriginalFile);
 	}
 }
 
@@ -264,6 +271,11 @@ void writeToFile() {
 	unsigned * WeightTable = getWeightArray();
 	SLEncodeMap * EncodeMap = getEncodeMap();
 	int16_t Count = 0;
+	int32_t FileEndIndex = 0;
+	fseek(Readable, 0, SEEK_END);
+	FileEndIndex = ftell(Readable);
+	fseek(Readable, 0, SEEK_SET);
+	fwrite(&FileEndIndex, sizeof(int32_t), 1, Writable);
 	for (int i = 0; i < WEIGHT_ARRAY_MAX_SIZE; i++) {
 		if (WeightTable[i] != 0) {
 			Count++;
@@ -278,38 +290,44 @@ void writeToFile() {
 	}
 	unsigned char BitCode = 0;
 	unsigned char CharCode = 0;
-	unsigned char * BitCodeBuffer = NULL;
+	char * BitCodeBuffer = NULL;
 	int BitIndex = 0;
+	int BitCount = 0;
+	fread(&CharCode, 1, 1, Readable);
+	BitCodeBuffer = EncodeMap[(unsigned)CharCode].BitBuffer;
 
-	while (fread(&CharCode, 1, 1, Readable) != 0) {
-		BitCodeBuffer = EncodeMap[(unsigned)CharCode].BitBuffer;
-		BitIndex = 0;
-		while (BitIndex != 8)
-		{
-			
-			if (BitCodeBuffer[BitIndex] != '\0'){
-				if (BitCodeBuffer[BitIndex] == '0') {
-					BitCode <<= 1;
-					BitIndex++;
-				}
-				else {
-					BitCode <<= 1;
-					BitCode |= 1;
-					BitIndex++;
-				}
-				if (BitIndex == 8) {
-					fwrite(&BitCode, 1, 1, Writable);
-					BitIndex = 0;
-					BitCode = 0;
-				}
+	while (1) {
+		if (BitCount == 8) {
+			fwrite(&BitCode, 1, 1, Writable);
+			BitCount = 0;
+			continue;
+		}
+
+		if (BitIndex == strlen(BitCodeBuffer)) {
+			if (FileEndIndex != ftell(Readable)) {
+				fread(&CharCode, 1, 1, Readable);
 			}
 			else {
 				break;
 			}
+			BitCodeBuffer = EncodeMap[(unsigned)CharCode].BitBuffer;
+			BitIndex = 0;
+		}
+
+		if (BitCodeBuffer[BitIndex] == '0') {
+			BitCode <<= 1;
+			BitIndex++;
+			BitCount++;
+		}
+		else {
+			BitCode = (BitCode << 1) | 1;
+			BitIndex++;
+			BitCount++;
 		}
 	}
 
-	if (BitIndex != 8) {
+	if (BitCount != 8) {
+		BitCode <<= 8 - BitCount;
 		fwrite(&BitCode, 1, 1, Writable);
 	}
 	fclose(Writable);
@@ -317,8 +335,8 @@ void writeToFile() {
 }
 
 void encodeFile() {
-	setOriginalFilePath("F:\\test.txt");
-	setCompressedFilePath("F:\\test.hz");
+	setOriginalFilePath("J:\\test.txt");
+	setCompressedFilePath("J:\\test.hiz");
 	readFromOriginalFile();
 	initHuffmanList();
 	buildHuffmanTree();
@@ -327,8 +345,8 @@ void encodeFile() {
 }
 
 void decodeFile() {
-	setCompressedFilePath("F:\\test.hz");
-	setOriginalFilePath("F:\\tmp.txt");
+	setCompressedFilePath("J:\\test.hiz");
+	setOriginalFilePath("J:\\tmp.txt");
 	readFromCompressedFile();
 	initHuffmanList();
 	buildHuffmanTree();
@@ -337,6 +355,8 @@ void decodeFile() {
 
 int main(int argc, char ** argv) {
 	encodeFile();
+	system("pause");
+	decodeFile();
 	system("pause");
 	return 0;
 }
