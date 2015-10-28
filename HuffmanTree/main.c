@@ -164,18 +164,13 @@ const char * getCompressedFilePath() {
 	return CompressedFilePath;
 }
 
-FILE * skipCompressedFileHead(FILE * Readable) {
+void skipCompressedFileHead(FILE * Readable) {
 	int SkipCount = 0;
 	unsigned char Char = 0;
 	unsigned Number = 0;
 	fread(&SkipCount, sizeof(int32_t), 1, Readable);
 	fread(&SkipCount, sizeof(int16_t), 1, Readable);
 	fseek(Readable, SkipCount * (sizeof(unsigned char) + sizeof(unsigned)), SEEK_CUR);
-	/*for (int i = 0; i < SkipCount; i++) {
-		fread(&Char, 1, 1, Readable);
-		fread(&Number, sizeof(unsigned), 1, Readable);
-	}*/
-	return Readable;
 
 }
 
@@ -195,7 +190,7 @@ void decodeHuffmanTreeAndWriteToFile() {
 	fseek(Readable, 0, SEEK_END);
 	ReadFileLength = ftell(Readable);
 	fseek(Readable, 0, SEEK_SET);
-	Readable = skipCompressedFileHead(Readable);
+	skipCompressedFileHead(Readable);
 	fread(&BitBuffer, 1, 1, Readable);
 	while (FileLength != length) {
 		if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
@@ -271,7 +266,7 @@ void finalExecution(int Operation) {
 		FILE * OriginalFile = fopen(getOriginalFilePath(), "w+b");
 		char Character = 0;
 		unsigned NodeWeight = 0;
-		CompressedFile = skipCompressedFileHead(CompressedFile);
+		skipCompressedFileHead(CompressedFile);
 		decodeHuffmanTreeAndWriteToFile();
 		fclose(CompressedFile);
 		fclose(OriginalFile);
@@ -314,6 +309,7 @@ void writeToFile() {
 	while (1) {
 		if (BitCount == 8) {
 			fwrite(&BitCode, 1, 1, Writable);
+			BitCode = 0;
 			BitCount = 0;
 			continue;
 		}
@@ -350,7 +346,7 @@ void writeToFile() {
 }
 
 void encodeFile() {
-	setOriginalFilePath("F:\\123.bmp");
+	setOriginalFilePath("F:\\test.txt");
 	setCompressedFilePath("F:\\test.hiz");
 	readFromOriginalFile();
 	initHuffmanList();
@@ -361,7 +357,7 @@ void encodeFile() {
 
 void decodeFile() {
 	setCompressedFilePath("F:\\test.hiz");
-	setOriginalFilePath("F:\\456.bmp");
+	setOriginalFilePath("F:\\temp.txt");
 	readFromCompressedFile();
 	initHuffmanList();
 	buildHuffmanTree();
