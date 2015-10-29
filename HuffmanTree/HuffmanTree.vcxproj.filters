@@ -19,15 +19,4 @@
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="includes.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="StructureDef.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="HuffmanCode.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>

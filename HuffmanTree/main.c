@@ -1,6 +1,24 @@
-﻿#include "includes.h"
+﻿#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#define WEIGHT_ARRAY_MAX_SIZE 256
 
+typedef struct SLHuffmanList {
+	unsigned char Character;
+	unsigned NodeWeight;
+	struct SLHuffmanList * Next;
+	struct SLHuffmanList * LeftNode;
+	struct SLHuffmanList * RightNode;
+}SLHuffmanList;
 
+SLHuffmanList * getHuffmanListHead() {
+	static SLHuffmanList Head;
+	return &Head;
+}
+
+typedef struct SLEncodeMap {
+	unsigned char * BitBuffer;
+}SLEncodeMap;
 
 SLEncodeMap * getEncodeMap() {
 	static SLEncodeMap EncodeMap[WEIGHT_ARRAY_MAX_SIZE];
@@ -100,6 +118,33 @@ void encodeHuffmanTree(SLEncodeMap * EncodeMap, SLHuffmanList * TreeRoot, unsign
 
 }
 
+
+
+//void decodeHuffmanTree(FILE * RFP, FILE * WFP, SLHuffmanList * TreeRoot, int CurrentBit) {
+//	static char OneBit = '0';
+//	static char BitBuffer;
+//	static int BitIndex = 7;
+//	if (CurrentBit == 0) {
+//		fread(&BitBuffer, 1, 1, RFP);
+//		CurrentBit = 7;
+//	}
+//	if (!(TreeRoot->LeftNode && TreeRoot->RightNode)) {
+//		fwrite(&TreeRoot->Character, 1, 1, WFP);
+//		TreeRoot = getHuffmanListHead() -> Next;
+//	}
+//	OneBit = (BitBuffer >> CurrentBit & 0x01) + 48;
+//	BitIndex--;
+//	if (OneBit == '0') {
+//		decodeHuffmanTree(RFP, WFP, TreeRoot->LeftNode, CurrentBit - 1);
+//	}
+//	else
+//	{
+//		decodeHuffmanTree(RFP, WFP, TreeRoot->RightNode, CurrentBit - 1);
+//	}
+//}
+//
+
+
 static char * OriginalFilePath;
 static char * CompressedFilePath;
 
@@ -120,17 +165,17 @@ const char * getCompressedFilePath() {
 }
 
 void skipCompressedFileHead(FILE * Readable) {
-	int32_t FileLength = 0; 
+	int32_t FileLength = 0;
 	int16_t SkipCount = 0;
 	unsigned char Char = 0;
 	unsigned Number = 0;
 
 	fread(&FileLength, sizeof(int32_t), 1, Readable);
 	fread(&SkipCount, sizeof(int16_t), 1, Readable);
-	fseek(Readable, SkipCount * (sizeof(unsigned char) + sizeof(unsigned)), SEEK_CUR);
+	fseek(Readable, SkipCount * (sizeof(unsigned char)+sizeof(unsigned)), SEEK_CUR);
 	/*for (int i = 0; i < SkipCount; i++) {
-		fread(&Char, 1, 1, Readable);
-		fread(&Number, sizeof(unsigned), 1, Readable);
+	fread(&Char, 1, 1, Readable);
+	fread(&Number, sizeof(unsigned), 1, Readable);
 	}*/
 
 }
@@ -147,7 +192,7 @@ void decodeHuffmanTreeAndWriteToFile() {
 	int32_t FileLength;
 	int length = 0;
 	int ReadFileLength = 0;
-	fread(&FileLength , sizeof(int32_t), 1, Readable);
+	fread(&FileLength, sizeof(int32_t), 1, Readable);
 	fseek(Readable, 0, SEEK_END);
 	ReadFileLength = ftell(Readable);
 	fseek(Readable, 0, SEEK_SET);
