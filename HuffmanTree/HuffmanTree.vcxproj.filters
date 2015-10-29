@@ -18,5 +18,34 @@
     <ClCompile Include="main.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="StructureOp.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HuffmanCode.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="FileOperation.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandDispatch.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="includes.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="StructureOp.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HuffmanCode.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FileOperation.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandDispatch.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -64,7 +64,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommandDispatch.c" />
+    <ClCompile Include="FileOperation.c" />
+    <ClCompile Include="HuffmanCode.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="StructureOp.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommandDispatch.h" />
+    <ClInclude Include="FileOperation.h" />
+    <ClInclude Include="HuffmanCode.h" />
+    <ClInclude Include="includes.h" />
+    <ClInclude Include="StructureOp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
