@@ -8,7 +8,7 @@ SLHuffmanList * getHuffmanListHead() {
 
 SLEncodeMap * getEncodeMap() {
 	static SLEncodeMap EncodeMap[WEIGHT_ARRAY_MAX_SIZE];
-	return &EncodeMap;
+	return EncodeMap;
 }
 
 void initEncodeMap() {

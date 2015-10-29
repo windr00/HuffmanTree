@@ -1,6 +1,7 @@
 #ifndef _STRUCTUREOP_H_
 #define _STRUCTUREOP_H_
 #include <stdio.h>
+#include <stdlib.h>
 #define WEIGHT_ARRAY_MAX_SIZE 256
 
 typedef struct SLHuffmanList {

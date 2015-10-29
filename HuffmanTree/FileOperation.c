@@ -69,7 +69,6 @@ void readFromCompressedFile() {
 		fread(&Character, 1, 1, CompressedFile);
 		fread(&NodeWeight, sizeof(unsigned), 1, CompressedFile);
 		WeightedArray[Character] = NodeWeight;
-		printf("%c (%d)\t%u\n", Character, Character, NodeWeight);
 	}
 	fclose(CompressedFile);
 	return 0;
