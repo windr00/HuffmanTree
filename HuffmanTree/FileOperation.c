@@ -1,24 +1,59 @@
 #include "FileOperation.h"
 
 int setOriginalFilePath(const char * Original) {
-	FILE * TestFP;
-	if ((TestFP = fopen(Original, "r+b")) == NULL) {
-		printErr("Error: FILE ", Original, " NOT ACCESSIBLE.\n", "<EOF>");
-		return 1;
-	}
 	OriginalFilePath = (char *)malloc(strlen(Original) + 1);
 	strcpy(OriginalFilePath, Original);
-	return 0;
+	return checkFile(Original);
 }
 
+
+
 int setCompressedFilePath(const char * Compressed) {
-	FILE * TestFP;
-	if ((TestFP = fopen(Compressed, "r+b")) == NULL) {
-		printErr("Error: FILE ", Compressed, " NOT ACCESSIBLE.\n", "<EOF>");
-		return 1;
-	}
 	CompressedFilePath = (char *)malloc(strlen(Compressed) + 1);
 	strcpy(CompressedFilePath, Compressed);
+	return checkFile(Compressed);
+}
+
+static int checkFile(const char * FilePath) {
+	FILE * FP;
+	if ((FP = fopen(FilePath, "r+b")) == NULL) {
+		printErr("ERROR: FILE ", FilePath, " NOT ACCESSIBLE!\n", END);
+		return 1;
+	}
+	fclose(FP);
+
+	if ((FP = fopen(FilePath, "r+b")) == NULL) {
+		printErr("ERROR: FILE ", FilePath, " NOT ACCESSIBLE!\n", END);
+		return 1;
+	}
+	fclose(FP);
+}
+
+int ifOnlyOneCharacter(unsigned char * TheOnlyChar) {
+	FILE * FP = fopen(getOriginalFilePath(), "r+b");
+	unsigned char Char = 0;
+	unsigned char Temp = 0;
+	fread(&Char, 1, 1, FP);
+	while (!feof(FP)) {
+		fread(&Temp, 1, 1, FP);
+		if (Char != Temp) {
+			return 0;
+		}
+	}
+	*TheOnlyChar = Temp;
+	return 1;
+}
+
+int ifCompressedOnlyOneCharacter(unsigned char * TheOnlyChar) {
+	FILE * CompressedFile = fopen(CompressedFilePath, "r+b");
+	int32_t FileLength = 0;
+	int16_t CharacterCount = 0;
+	fread(&FileLength, sizeof(int32_t), 1, CompressedFile);
+	fread(&CharacterCount, sizeof(int16_t), 1, CompressedFile);
+	if (CharacterCount == 1) {
+		fread(TheOnlyChar, sizeof(unsigned char), 1, CompressedFile);
+		return 1;
+	}
 	return 0;
 }
 
@@ -73,6 +108,8 @@ void readFromCompressedFile() {
 	fclose(CompressedFile);
 	return 0;
 }
+
+
 
 
 void writeToFile() {

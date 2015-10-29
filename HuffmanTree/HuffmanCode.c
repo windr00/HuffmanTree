@@ -1,5 +1,38 @@
 #include "HuffmanCode.h"
 
+
+void encodeFile() {
+	unsigned char TempChar = 0;
+	readFromOriginalFile();
+	initHuffmanList();
+	buildHuffmanTree();
+	finalExecution(0);
+	if (ifOnlyOneCharacter(&TempChar)) {
+		SLEncodeMap * EncodeMap = getEncodeMap();
+		EncodeMap[TempChar].BitBuffer = "0";
+	}
+	writeToFile();
+}
+
+void decodeFile() {
+	unsigned char TempChar = 0;
+	readFromCompressedFile();
+	initHuffmanList();
+	buildHuffmanTree();
+	if (ifCompressedOnlyOneCharacter(&TempChar)) {
+		SLHuffmanList * Head = getHuffmanListHead();
+		SLHuffmanList * NewNode = (SLHuffmanList *)malloc(sizeof(SLHuffmanList));
+		NewNode->Next = NULL;
+		NewNode->Character = TempChar;
+		NewNode->LeftNode = NULL;
+		NewNode->RightNode = NULL;
+		NewNode->NodeWeight = Head->Next->NodeWeight;
+		Head->Next->LeftNode = NewNode;
+		Head->Next->RightNode = NewNode;
+	}
+	finalExecution(1);
+}
+
 void decodeHuffmanTreeAndWriteToFile() {
 	FILE * Readable = fopen(getCompressedFilePath(), "r+b");
 	FILE * Writable = fopen(getOriginalFilePath(), "w+b");

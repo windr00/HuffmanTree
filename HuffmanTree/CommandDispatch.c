@@ -23,23 +23,8 @@ int getUserCommand(int argc, const char ** argv) {
 	default:
 		printErr("Usage: -c original-file compressed-file\n", 
 			     "       -u compressed-file original-file\n",
-				 "<EOF>");
+				 END);
 		return 1;
 		break;
 	}
-}
-
-static void encodeFile() {
-	readFromOriginalFile();
-	initHuffmanList();
-	buildHuffmanTree();
-	finalExecution(0);
-	writeToFile();
-}
-
-static void decodeFile() {
-	readFromCompressedFile();
-	initHuffmanList();
-	buildHuffmanTree();
-	finalExecution(1);
 }
