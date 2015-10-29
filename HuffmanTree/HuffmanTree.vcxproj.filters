@@ -30,6 +30,9 @@
     <ClCompile Include="CommandDispatch.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Support.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes.h">
@@ -45,6 +48,9 @@
       <Filter>源文件</Filter>
     </ClInclude>
     <ClInclude Include="CommandDispatch.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Support.h">
       <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,4 +1,5 @@
-
+#ifndef _STRUCTUREOP_H_
+#define _STRUCTUREOP_H_
 #include <stdio.h>
 #define WEIGHT_ARRAY_MAX_SIZE 256
 
@@ -20,3 +21,5 @@ SLEncodeMap * getEncodeMap();
 void initEncodeMap();
 unsigned * getWeightArray();
 void initHuffmanList();
+
+#endif

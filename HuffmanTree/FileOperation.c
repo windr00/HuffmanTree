@@ -1,11 +1,25 @@
 #include "FileOperation.h"
 
-void setOriginalFilePath(const char * Original) {
-	OriginalFilePath = Original;
+int setOriginalFilePath(const char * Original) {
+	FILE * TestFP;
+	if ((TestFP = fopen(Original, "r+b")) == NULL) {
+		printErr("Error: FILE ", Original, " NOT ACCESSIBLE.\n", "<EOF>");
+		return 1;
+	}
+	OriginalFilePath = (char *)malloc(strlen(Original) + 1);
+	strcpy(OriginalFilePath, Original);
+	return 0;
 }
 
-void setCompressedFilePath(const char * Compressed) {
-	CompressedFilePath = Compressed;
+int setCompressedFilePath(const char * Compressed) {
+	FILE * TestFP;
+	if ((TestFP = fopen(Compressed, "r+b")) == NULL) {
+		printErr("Error: FILE ", Compressed, " NOT ACCESSIBLE.\n", "<EOF>");
+		return 1;
+	}
+	CompressedFilePath = (char *)malloc(strlen(Compressed) + 1);
+	strcpy(CompressedFilePath, Compressed);
+	return 0;
 }
 
 const char * getOriginalFilePath() {
@@ -39,6 +53,7 @@ void readFromOriginalFile() {
 		WeightedArray[Character]++;
 	}
 	fclose(OriginalFile);
+	return 0;
 }
 
 void readFromCompressedFile() {
@@ -57,6 +72,7 @@ void readFromCompressedFile() {
 		printf("%c (%d)\t%u\n", Character, Character, NodeWeight);
 	}
 	fclose(CompressedFile);
+	return 0;
 }
 
 
