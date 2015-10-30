@@ -27,6 +27,7 @@ static int checkFile(const char * FilePath) {
 		return 1;
 	}
 	fclose(FP);
+	return 0;
 }
 
 int ifOnlyOneCharacter(unsigned char * TheOnlyChar) {
